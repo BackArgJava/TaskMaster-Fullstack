@@ -1,16 +1,22 @@
 package com.taskmaster.backend.model;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import jakarta.persistence.*;
-import lombok.Data; // Lombok writes the Getters/Setters for us!
+import lombok.Data;
 
-@Entity // This tells Java: "Save this to the Database table"
-@Data   // This tells Lombok: "Generate getters, setters, and toString"
+@Entity
+@Data
 public class Task {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment ID (1, 2, 3...)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;      // e.g., "Buy Milk"
-    private boolean completed; // true = ✅, false = ⬜
+    // ✅ MERGED: The variable + The Rules together
+    @NotBlank(message = "Title cannot be empty")
+    @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
+    private String title;
+
+    private boolean completed;
 }

@@ -2,72 +2,116 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import './App.css'
 
-// 🗑️ Trash Icon Component (Simple SVG)
+// 🗑️ Trash Icon
 const TrashIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6"></polyline>
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-  </svg>
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
 )
 
 function App() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
+  
+  // 🔐 SECURITY STATE
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [error, setError] = useState("");
 
-  const API_URL = "http://localhost:8081/tasks"; // 🔗 The Java Backend
+  const API_URL = "http://localhost:8081/tasks";
 
-  // 1. READ: Fetch tasks 📖
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchTasks = () => {
-    axios.get(API_URL)
-      .then(response => setTasks(response.data))
-      .catch(error => console.error("Error:", error));
+  // 🔑 THE CREDENTIALS (The "Briefcase")
+  const authConfig = {
+    auth: {
+      username: username,
+      password: password
+    }
   };
 
-  // 2. CREATE: Add task ➕
+  // 1. LOGIN FUNCTION
+  const handleLogin = (e) => {
+    e.preventDefault();
+    axios.get(API_URL, authConfig)
+      .then(response => {
+        setTasks(response.data);
+        setIsLoggedIn(true);
+        setError("");
+      })
+      .catch(error => {
+        setError("❌ Login Failed! Check console.");
+        console.error(error);
+      });
+  };
+
+  // 2. CREATE (With Error Handling) ➕
   const addTask = () => {
-    if (!newTask) return;
-    axios.post(API_URL, { title: newTask, completed: false })
+    setError(""); // Clear previous errors
+
+    axios.post(API_URL, { title: newTask, completed: false }, authConfig)
       .then(response => {
         setTasks([...tasks, response.data]);
         setNewTask("");
+        setError(""); 
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        // 🕵️‍♂️ DETECTIVE WORK: Show Backend Error
+        if (error.response && error.response.status === 400) {
+            setError("❌ Backend says: Title is invalid (check rules)");
+        } else {
+            setError("❌ Something exploded.");
+        }
+      });
+  };
+
+  // 3. UPDATE (I put this back!) ✅
+  const toggleTask = (id, currentStatus, title) => {
+    axios.put(`${API_URL}/${id}`, { title, completed: !currentStatus }, authConfig)
+      .then(response => {
+        setTasks(tasks.map(t => t.id === id ? response.data : t));
       })
       .catch(error => console.error("Error:", error));
   };
 
-  // 3. UPDATE: Toggle Checkbox (Mark as Done) ✅
-  const toggleTask = (id, currentStatus, title) => {
-    axios.put(`${API_URL}/${id}`, {
-      title: title,            // Keep title the same
-      completed: !currentStatus // Flip the status (true -> false, false -> true)
-    })
-    .then(response => {
-      // Update the UI instantly without reloading
-      setTasks(tasks.map(task => 
-        task.id === id ? response.data : task
-      ));
-    })
-    .catch(error => console.error("Error updating:", error));
-  };
-
-  // 4. DELETE: Remove task 🗑️
+  // 4. DELETE (I put this back!) 🗑️
   const deleteTask = (id) => {
-    axios.delete(`${API_URL}/${id}`)
-      .then(() => {
-        // Remove it from the UI instantly
-        setTasks(tasks.filter(task => task.id !== id));
-      })
-      .catch(error => console.error("Error deleting:", error));
+    axios.delete(`${API_URL}/${id}`, authConfig)
+      .then(() => setTasks(tasks.filter(t => t.id !== id)))
+      .catch(error => console.error("Error:", error));
   };
 
+  // 🛑 IF NOT LOGGED IN -> SHOW LOGIN FORM
+  if (!isLoggedIn) {
+    return (
+      <div className="app-container">
+        <h1>🔐 Security Gate</h1>
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <input 
+            type="text" 
+            placeholder="Username (user)" 
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+          />
+          <input 
+            type="password" 
+            placeholder="Password" 
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+          />
+          <button type="submit">Unlock App 🔓</button>
+        </form>
+        {error && <p style={{color: 'red'}}>{error}</p>}
+      </div>
+    );
+  }
+
+  // ✅ IF LOGGED IN -> SHOW TASKS
   return (
     <div className="app-container">
       <h1>🏆 Task Master 3000</h1>
+      <div style={{marginBottom: '20px', color: '#03dac6'}}>
+        Logged in as: <strong>{username}</strong>
+      </div>
       
-      {/* INPUT FORM */}
       <div className="input-group">
         <input 
           type="text" 
@@ -79,29 +123,19 @@ function App() {
         <button onClick={addTask} className="add-btn">Add</button>
       </div>
 
-      {/* THE LIST */}
+      {/* 🔴 ERROR MESSAGE ZONE (Now inside the return!) */}
+      {error && <div style={{ color: 'red', marginTop: '10px', fontWeight: 'bold' }}>{error}</div>}
+
       <ul className="task-list">
         {tasks.map(task => (
           <li key={task.id} className={`task-item ${task.completed ? "completed" : ""}`}>
-            
-            {/* CHECKBOX (Click text to toggle) */}
             <span 
               onClick={() => toggleTask(task.id, task.completed, task.title)}
               style={{ cursor: "pointer", flexGrow: 1, textAlign: "left" }}
             >
-              {task.completed ? "✅ " : "⬜ "} 
-              {task.title}
+              {task.completed ? "✅ " : "⬜ "} {task.title}
             </span>
-
-            {/* DELETE BUTTON */}
-            <button 
-              onClick={() => deleteTask(task.id)} 
-              className="delete-btn"
-              title="Delete Task"
-            >
-              <TrashIcon />
-            </button>
-
+            <button onClick={() => deleteTask(task.id)} className="delete-btn"><TrashIcon /></button>
           </li>
         ))}
       </ul>
