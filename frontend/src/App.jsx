@@ -107,7 +107,7 @@ function App() {
   // ✅ IF LOGGED IN -> SHOW TASKS
   return (
     <div className="app-container">
-      <h1>🏆 Task Master 3000</h1>
+      <h1>🧘 My Zen Tasks</h1>
       <div style={{marginBottom: '20px', color: '#03dac6'}}>
         Logged in as: <strong>{username}</strong>
       </div>
