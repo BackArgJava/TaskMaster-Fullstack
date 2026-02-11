@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
-@RequestMapping("/tasks") // This means all URLs start with /tasks
-@CrossOrigin(origins = "http://localhost:5173") // 🔓 OPEN THE GATES FOR REACT!
+@RequestMapping("/tasks")
 public class TaskController {
 
     @Autowired

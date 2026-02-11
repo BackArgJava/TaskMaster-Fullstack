@@ -17,7 +17,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [error, setError] = useState("");
 
-  const API_URL = "http://localhost:8081/tasks";
+  const API_URL = "https://taskmaster-fullstack-production.up.railway.app/api/tasks";
 
   // 🔑 THE CREDENTIALS (The "Briefcase")
   const authConfig = {
