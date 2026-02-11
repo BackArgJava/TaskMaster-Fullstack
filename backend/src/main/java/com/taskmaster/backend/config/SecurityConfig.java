@@ -2,6 +2,7 @@ package com.taskmaster.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // <--- NEW IMPORT
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,6 +27,9 @@ public class SecurityConfig {
                         // 🔓 ALLOW SWAGGER (No Password needed)
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
+                        // 🔓 ALLOW PREFLIGHT REQUESTS (The Invisible Handshake) - CRITICAL FIX
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // 🔒 EVERYTHING ELSE (Needs Password)
                         .anyRequest().authenticated()
                 )
@@ -38,13 +42,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // ALLOW REACT (The only allowed origin)
+        // ALLOW REACT (Make sure this matches your Vite port)
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
 
-        // ALLOW COMMANDS (GET, POST, PUT, DELETE)
+        // ALLOW COMMANDS
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        // ALLOW HEADERS (Authorization is the password briefcase)
+        // ALLOW HEADERS
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 
         // ALLOW CREDENTIALS
